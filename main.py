@@ -27,3 +27,34 @@ def get_article(article_id: int, db: Session = Depends(get_db)):
     if article is None:
         raise HTTPException(status_code=404, detail="Article not found")
     return article
+
+
+@app.post("/articles", response_model=schemas.ArticleOut, status_code=201)
+def create_article(data: schemas.ArticleIn, db: Session = Depends(get_db)):
+    article = models.Article(**data.model_dump())
+    db.add(article)
+    db.commit()
+    db.refresh(article)
+    return article
+
+
+@app.put("/articles/{article_id}", response_model=schemas.ArticleOut)
+def update_article(article_id: int, data: schemas.ArticleIn, db: Session = Depends(get_db)):
+    article = db.get(models.Article, article_id)
+    if article is None:
+        raise HTTPException(status_code=404, detail="Article not found")
+    article.title = data.title
+    article.content = data.content
+    article.tags = data.tags
+    db.commit()
+    db.refresh(article)
+    return article
+
+
+@app.delete("/articles/{article_id}", status_code=204)
+def delete_article(article_id: int, db: Session = Depends(get_db)):
+    article = db.get(models.Article, article_id)
+    if article is None:
+        raise HTTPException(status_code=404, detail="Article not found")
+    db.delete(article)
+    db.commit()
